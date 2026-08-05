@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:background="@color/rk_panel"
+    android:padding="10dp"
+    android:gravity="center_vertical">
+
+    <ImageView
+        android:id="@+id/thumb"
+        android:layout_width="112dp"
+        android:layout_height="63dp"
+        android:scaleType="centerCrop"
+        android:background="@color/rk_bg"
+        android:contentDescription="@string/play"/>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="12dp">
+        <TextView android:id="@+id/name" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:maxLines="1" android:ellipsize="middle"
+            android:textColor="@color/rk_ink" android:textSize="14sp" android:textStyle="bold"/>
+        <TextView android:id="@+id/meta" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="2dp"
+            android:textColor="@color/rk_dim" android:textSize="12sp"/>
+        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginTop="6dp">
+            <Button android:id="@+id/shareBtn" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:minWidth="0dp" android:minHeight="0dp"
+                android:paddingHorizontal="14dp" android:paddingVertical="4dp"
+                android:text="@string/share" android:textSize="12sp"
+                android:textColor="@color/rk_ink" android:backgroundTint="@color/rk_bg"
+                android:layout_marginEnd="8dp"/>
+            <Button android:id="@+id/deleteBtn" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:minWidth="0dp" android:minHeight="0dp"
+                android:paddingHorizontal="14dp" android:paddingVertical="4dp"
+                android:text="@string/delete" android:textSize="12sp"
+                android:textColor="#FFFFFF" android:backgroundTint="@color/rk_red"/>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">RK RECORDING</string>
+    <string name="tagline">Unlimited screen recorder</string>
+    <string name="quality">Quality</string>
+    <string name="mic">Record microphone</string>
+    <string name="internal">Internal audio (app / game sound)</string>
+    <string name="clean">Clear voice (reduce noise)</string>
+    <string name="start">● Start recording</string>
+    <string name="stop">■ Stop &amp; save</string>
+    <string name="status_idle">Ready. Files save to Movies/RK RECORDING.</string>
+    <string name="status_recording">Recording… pull down the notification to stop.</string>
+    <string name="status_stopped">Stopped — saved to Movies/RK RECORDING.</string>
+    <string name="status_cancelled">Cancelled.</string>
+    <string name="framerate">Frame rate</string>
+    <string name="bitrate">Video bitrate</string>
+    <string name="my_recordings">My recordings</string>
+    <string name="gallery_title">My recordings</string>
+    <string name="gallery_empty">No recordings yet.\nRecord something — it will appear here.</string>
+    <string name="play">Play</string>
+    <string name="share">Share</string>
+    <string name="delete">Delete</string>
+    <string name="draw_overlay">Draw on screen while recording</string>
+    <string name="need_overlay">Allow "Display over other apps", then press Start again.</string>
+</resources>

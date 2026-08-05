@@ -1,0 +1,8 @@
+<resources>
+    <color name="rk_red">#E5484D</color>
+    <color name="rk_bg">#0E1116</color>
+    <color name="rk_panel">#171B22</color>
+    <color name="rk_ink">#E6E9EF</color>
+    <color name="rk_dim">#9AA2B1</color>
+    <color name="ic_launcher_background">#0E1116</color>
+</resources>

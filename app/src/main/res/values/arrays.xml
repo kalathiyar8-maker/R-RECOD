@@ -1,0 +1,15 @@
+<resources>
+    <string-array name="fps_entries">
+        <item>30 fps</item>
+        <item>60 fps</item>
+        <item>24 fps</item>
+        <item>15 fps</item>
+    </string-array>
+    <string-array name="bitrate_entries">
+        <item>Auto (by quality)</item>
+        <item>4 Mbps</item>
+        <item>8 Mbps</item>
+        <item>12 Mbps</item>
+        <item>20 Mbps</item>
+    </string-array>
+</resources>
