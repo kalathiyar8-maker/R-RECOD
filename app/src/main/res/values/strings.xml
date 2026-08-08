@@ -21,4 +21,6 @@
     <string name="delete">Delete</string>
     <string name="draw_overlay">Draw on screen while recording</string>
     <string name="need_overlay">Allow "Display over other apps", then press Start again.</string>
+    <string name="countdown">3-2-1 countdown before start</string>
+    <string name="floating">Floating controls (timer, pause, stop)</string>
 </resources>

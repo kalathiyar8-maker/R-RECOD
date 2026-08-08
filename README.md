@@ -17,7 +17,18 @@ Package: `com.rk.recording` · minSdk 29 (Android 10) · targetSdk 34.
 - **Draw on screen while recording** — a floating pen overlay (pen on/off, 5 colours,
   3 thicknesses, undo, clear, movable toolbar). Drawings are burned into the video.
   Needs the one-time "Display over other apps" permission (app opens the setting for you).
+- **3-2-1 countdown** with Skip before recording starts.
+- **Floating controls** on screen while recording: movable bubble with live timer,
+  **Pause / Resume** and **Stop** (like the phone's built-in recorder).
 - App icon: **RK**.
+- Version 1.1 (versionCode 2).
+
+### Not included (and why)
+- **Region / partial-area crop**: needs a low-level GPU crop pipeline; left out to keep
+  the build reliable. Android's own "Share one app" (shown when you start) already records
+  just one app.
+- **"Show taps and touches"** over other apps: only the system recorder can draw other
+  apps' touch dots. You can turn it on phone-wide via Settings > Developer options > "Show taps".
 
 ---
 
@@ -56,6 +67,30 @@ gradle assembleDebug
 4. Screen record thay chhe. Notification ma **timer** ane **Stop & save** button chhe.
 5. Stop dabaao → file **Movies/RK RECORDING** ma save. Gallery/Files ma dekhaay.
 
+
+
+## Internal audio (app sound) — read this
+Version 1.2 fixes the common "video records but no sound" problem. The fix: the mic now
+uses the plain MIC source (earlier it used VOICE_COMMUNICATION, which put the phone in
+call-mode and silenced captured media audio). Noise reduction is now done with audio
+effects instead.
+
+Tips if a specific app still has no sound:
+- Turn ON the "Internal audio" switch (it is on by default).
+- YouTube, most games, music and video apps: captured fine (USAGE_MEDIA).
+- **Zoom / phone calls / WhatsApp calls**: Android does NOT allow any third-party app to
+  capture another app's *call* audio (voice-communication) — this is an OS privacy rule,
+  not an app bug. Workaround: play the call on **speaker** and turn ON **Microphone** so
+  the room sound (incl. the other person) is recorded through the mic.
+- Some apps (certain OTT/DRM players) mark their audio as non-capturable; their sound
+  cannot be recorded by any recorder.
+
+## Countdown & floating controls
+- "3-2-1 countdown" and "Floating controls" switches are ON by default.
+- They use the same "Display over other apps" permission as draw (allow once).
+- After you start, a 3-2-1 countdown shows (tap "Skip countdown" to skip), then a small
+  movable bubble appears with the timer, Pause/Resume and Stop.
+
 ## Draw on screen (annotate)
 - "Draw on screen while recording" switch on karo → Start.
 - Pehli var "Display over other apps" allow karvanu (app e setting kholi ape) → pachi Start fari dabaao.
@@ -74,3 +109,13 @@ gradle assembleDebug
   "Internal audio" switch on rakho. Mic + internal banne on hoy to banne mix thay.
   Nondh: aapo aap (system/app) je audio 'capture allowed' rakhe te j padse; keta
   DRM/protected app (dakhla tarike keta OTT) no awaj Android capture na kare — e OS ni limitation chhe.
+
+## Internal audio (app sound) — read this
+Version 1.2 fixes the common "video records but no sound" problem. The mic now uses the
+plain MIC source (earlier VOICE_COMMUNICATION put the phone in call-mode and silenced the
+captured media audio). Noise reduction is now done with audio effects instead.
+
+- Keep the "Internal audio" switch ON (default). YouTube, games, music/video apps record fine.
+- Zoom / phone / WhatsApp calls: Android does NOT let any third-party app capture another
+  app's CALL audio (privacy rule). Workaround: play on speaker + turn on Microphone.
+- Some DRM/OTT players mark audio non-capturable; no recorder can capture those.

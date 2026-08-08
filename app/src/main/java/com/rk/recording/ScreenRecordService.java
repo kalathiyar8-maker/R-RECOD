@@ -43,6 +43,11 @@ public class ScreenRecordService extends Service {
     private ParcelFileDescriptor pfd;
     private boolean recording = false;
     private AnnotationOverlay overlay;
+    private ControlOverlay controls;
+    private CountdownOverlay countdown;
+    private Surface pSurface;
+    private int pVw, pVh, pDpi;
+    private boolean pDraw, pFloating;
 
     @Nullable @Override public IBinder onBind(Intent i) { return null; }
 
@@ -68,6 +73,8 @@ public class ScreenRecordService extends Service {
         int fps          = intent.getIntExtra("fps", 30);
         int userBitrate  = intent.getIntExtra("bitrate", 0);
         boolean draw     = intent.getBooleanExtra("draw", false);
+        boolean countdownOn = intent.getBooleanExtra("countdown", true);
+        boolean floating    = intent.getBooleanExtra("floating", true);
 
         startForeground(1, buildNotification());
 
@@ -93,20 +100,16 @@ public class ScreenRecordService extends Service {
             engine = new RecorderEngine(projection, pfd.getFileDescriptor(),
                     vw, vh, bitrate, fps, mic, internal, clean,
                     msg -> toast(msg));
-            Surface surface = engine.prepare();
-
-            vd = projection.createVirtualDisplay("RKRec", vw, vh, dpi,
-                    DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-                    surface, null, null);
-
-            engine.start();
+            pSurface = engine.prepare();
+            pVw = vw; pVh = vh; pDpi = dpi; pDraw = draw; pFloating = floating;
             recording = true;
 
-            if (draw && android.provider.Settings.canDrawOverlays(this)) {
-                try { overlay = new AnnotationOverlay(this); overlay.show(); }
-                catch (Exception e) { overlay = null; }
+            if (countdownOn && android.provider.Settings.canDrawOverlays(this)) {
+                countdown = new CountdownOverlay(this);
+                countdown.show(3, this::beginCapture);
+            } else {
+                beginCapture();
             }
-            toast("Recording started");
         } catch (Exception e) {
             toast("Start failed: " + e.getMessage());
             stopRecording();
@@ -130,7 +133,42 @@ public class ScreenRecordService extends Service {
         pfd = getContentResolver().openFileDescriptor(outUri, "rw");
     }
 
+    private void beginCapture() {
+        if (projection == null || engine == null) return;
+        try {
+            vd = projection.createVirtualDisplay("RKRec", pVw, pVh, pDpi,
+                    DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                    pSurface, null, null);
+            engine.start();
+
+            if (pFloating && android.provider.Settings.canDrawOverlays(this)) {
+                controls = new ControlOverlay(this, new ControlOverlay.Listener() {
+                    @Override public boolean onPauseToggle() { return togglePause(); }
+                    @Override public void onStop() { stopRecording(); stopSelf(); }
+                });
+                controls.show();
+            }
+            if (pDraw && android.provider.Settings.canDrawOverlays(this)) {
+                overlay = new AnnotationOverlay(this);
+                overlay.show();
+            }
+            toast("Recording started");
+        } catch (Exception e) {
+            toast("Start failed: " + e.getMessage());
+            stopRecording();
+            stopSelf();
+        }
+    }
+
+    private boolean togglePause() {
+        if (engine == null) return false;
+        if (engine.isPaused()) engine.resume(); else engine.pause();
+        return engine.isPaused();
+    }
+
     private void stopRecording() {
+        try { if (countdown != null) { countdown.hide(); countdown = null; } } catch (Exception ignored) {}
+        try { if (controls != null) { controls.hide(); controls = null; } } catch (Exception ignored) {}
         try { if (overlay != null) { overlay.hide(); overlay = null; } } catch (Exception ignored) {}
         try { if (engine != null) { engine.stop(); engine = null; } } catch (Exception ignored) {}
         try { if (vd != null) { vd.release(); vd = null; } } catch (Exception ignored) {}

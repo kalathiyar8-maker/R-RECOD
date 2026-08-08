@@ -78,7 +78,17 @@
         <Switch android:id="@+id/drawSwitch" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:text="@string/draw_overlay"
             android:textColor="@color/rk_ink" android:textSize="15sp"
-            android:checked="false" android:paddingVertical="8dp"
+            android:checked="false" android:paddingVertical="8dp"/>
+
+        <Switch android:id="@+id/countdownSwitch" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:text="@string/countdown"
+            android:textColor="@color/rk_ink" android:textSize="15sp"
+            android:checked="true" android:paddingVertical="8dp"/>
+
+        <Switch android:id="@+id/floatingSwitch" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:text="@string/floating"
+            android:textColor="@color/rk_ink" android:textSize="15sp"
+            android:checked="true" android:paddingVertical="8dp"
             android:layout_marginBottom="20dp"/>
 
         <Button android:id="@+id/startBtn" android:layout_width="match_parent"

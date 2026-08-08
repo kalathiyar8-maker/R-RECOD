@@ -4,6 +4,8 @@ import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioPlaybackCaptureConfiguration;
 import android.media.AudioRecord;
+import android.media.audiofx.AcousticEchoCanceler;
+import android.media.audiofx.NoiseSuppressor;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
@@ -44,10 +46,14 @@ public class RecorderEngine {
     private int videoTrack = -1, audioTrack = -1;
 
     private AudioRecord micRec, playRec;
+    private NoiseSuppressor ns;
+    private AcousticEchoCanceler aec;
     private int outChannels = 1;
     private Thread videoThread, audioThread;
     private volatile boolean running = false;
     private long firstVideoPtsUs = -1;
+    private volatile boolean paused = false;
+    private long pausedOffsetUs = 0, pauseAnchorUs = -1, lastVideoPtsUs = -1;
     private long audioFrames = 0;
 
     public RecorderEngine(MediaProjection projection, FileDescriptor outFd,
@@ -106,21 +112,30 @@ public class RecorderEngine {
                         .setAudioPlaybackCaptureConfig(conf)
                         .setAudioFormat(fmt)
                         .setBufferSizeInBytes(Math.max(minBuf, FRAMES * 2 * 2 * 4)).build();
-                if (r.getState() == AudioRecord.STATE_INITIALIZED) playRec = r; else r.release();
-            } catch (Exception e) { playRec = null; }
+                if (r.getState() == AudioRecord.STATE_INITIALIZED) playRec = r;
+                else { r.release(); fail("Internal audio not available on this device"); }
+            } catch (Exception e) { playRec = null; fail("Internal audio blocked: " + e.getMessage()); }
         }
         if (useMic) {
             try {
                 int minBuf = AudioRecord.getMinBufferSize(SAMPLE_RATE,
                         AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-                int src = cleanVoice ? MediaRecorder.AudioSource.VOICE_COMMUNICATION
-                                     : MediaRecorder.AudioSource.MIC;
-                AudioRecord r = new AudioRecord(src, SAMPLE_RATE,
+                // IMPORTANT: use plain MIC (not VOICE_COMMUNICATION) so the device does NOT
+                // switch to communication mode, which would silence captured media audio.
+                AudioRecord r = new AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLE_RATE,
                         AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT,
                         Math.max(minBuf, FRAMES * 2 * 4));
-                if (r.getState() == AudioRecord.STATE_INITIALIZED) micRec = r; else r.release();
+                if (r.getState() == AudioRecord.STATE_INITIALIZED) {
+                    micRec = r;
+                    if (cleanVoice) attachVoiceCleanup(r.getAudioSessionId());
+                } else { r.release(); }
             } catch (Exception e) { micRec = null; }
         }
+    }
+
+    private void attachVoiceCleanup(int sessionId) {
+        try { if (NoiseSuppressor.isAvailable()) { ns = NoiseSuppressor.create(sessionId); if (ns != null) ns.setEnabled(true); } } catch (Exception ignored) {}
+        try { if (AcousticEchoCanceler.isAvailable()) { aec = AcousticEchoCanceler.create(sessionId); if (aec != null) aec.setEnabled(true); } } catch (Exception ignored) {}
     }
 
     public void start() {
@@ -157,8 +172,16 @@ public class RecorderEngine {
                     if ((info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) info.size = 0;
                     if (info.size > 0 && buf != null) {
                         if (firstVideoPtsUs < 0) firstVideoPtsUs = info.presentationTimeUs;
-                        info.presentationTimeUs -= firstVideoPtsUs;
-                        writeSample(videoTrack, buf, info);
+                        if (paused) {
+                            if (pauseAnchorUs < 0) pauseAnchorUs = info.presentationTimeUs;
+                        } else {
+                            if (pauseAnchorUs >= 0) { pausedOffsetUs += info.presentationTimeUs - pauseAnchorUs; pauseAnchorUs = -1; }
+                            long adj = info.presentationTimeUs - firstVideoPtsUs - pausedOffsetUs;
+                            if (adj <= lastVideoPtsUs) adj = lastVideoPtsUs + 1000;
+                            info.presentationTimeUs = adj;
+                            writeSample(videoTrack, buf, info);
+                            lastVideoPtsUs = adj;
+                        }
                     }
                     videoCodec.releaseOutputBuffer(out, false);
                     if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) break;
@@ -177,6 +200,8 @@ public class RecorderEngine {
             while (running) {
                 int lenI = (playRec != null) ? playRec.read(in, 0, FRAMES * 2) : 0;
                 int lenM = (micRec  != null) ? micRec.read(mc, 0, FRAMES)      : 0;
+
+                if (paused) continue;   // discard while paused; keeps A/V in sync
 
                 int frames, samples;
                 if (playRec != null && micRec != null) {
@@ -272,6 +297,8 @@ public class RecorderEngine {
         try { if (videoCodec != null) { videoCodec.stop(); videoCodec.release(); } } catch (Exception ignored) {}
         try { if (audioCodec != null) { audioCodec.stop(); audioCodec.release(); } } catch (Exception ignored) {}
         try { if (playRec != null) { playRec.stop(); playRec.release(); } } catch (Exception ignored) {}
+        try { if (ns != null)  { ns.release();  ns = null; } }  catch (Exception ignored) {}
+        try { if (aec != null) { aec.release(); aec = null; } } catch (Exception ignored) {}
         try { if (micRec  != null) { micRec.stop();  micRec.release();  } } catch (Exception ignored) {}
         try { if (inputSurface != null) inputSurface.release(); } catch (Exception ignored) {}
         synchronized (muxerLock) {
@@ -279,6 +306,17 @@ public class RecorderEngine {
             muxer = null; muxerStarted = false;
         }
     }
+
+    public void pause() { paused = true; }
+    public void resume() {
+        paused = false;
+        try {
+            android.os.Bundle b = new android.os.Bundle();
+            b.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
+            videoCodec.setParameters(b);
+        } catch (Exception ignored) {}
+    }
+    public boolean isPaused() { return paused; }
 
     private void fail(String m) { if (errorListener != null) errorListener.onError(m); }
 }

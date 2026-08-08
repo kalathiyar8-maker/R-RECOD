@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
 
     private MediaProjectionManager mpm;
     private RadioGroup qualityGroup;
-    private Switch micSwitch, internalSwitch, cleanSwitch, drawSwitch;
+    private Switch micSwitch, internalSwitch, cleanSwitch, drawSwitch, countdownSwitch, floatingSwitch;
     private Spinner fpsSpinner, bitrateSpinner;
     private TextView status;
     private ActivityResultLauncher<Intent> captureLauncher;
@@ -49,6 +49,8 @@ public class MainActivity extends AppCompatActivity {
         internalSwitch = findViewById(R.id.internalSwitch);
         cleanSwitch    = findViewById(R.id.cleanSwitch);
         drawSwitch     = findViewById(R.id.drawSwitch);
+        countdownSwitch = findViewById(R.id.countdownSwitch);
+        floatingSwitch  = findViewById(R.id.floatingSwitch);
         fpsSpinner     = findViewById(R.id.fpsSpinner);
         bitrateSpinner = findViewById(R.id.bitrateSpinner);
         status         = findViewById(R.id.status);
@@ -78,7 +80,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void requestPermsThenCapture() {
-        if (drawSwitch.isChecked() && !android.provider.Settings.canDrawOverlays(this)) {
+        if ((drawSwitch.isChecked() || countdownSwitch.isChecked() || floatingSwitch.isChecked())
+                && !android.provider.Settings.canDrawOverlays(this)) {
             status.setText(R.string.need_overlay);
             try {
                 startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
@@ -140,6 +143,8 @@ public class MainActivity extends AppCompatActivity {
         i.putExtra("fps", fps);
         i.putExtra("bitrate", bitrate);
         i.putExtra("draw", drawSwitch.isChecked());
+        i.putExtra("countdown", countdownSwitch.isChecked());
+        i.putExtra("floating", floatingSwitch.isChecked());
         ContextCompat.startForegroundService(this, i);
         status.setText(R.string.status_recording);
     }
